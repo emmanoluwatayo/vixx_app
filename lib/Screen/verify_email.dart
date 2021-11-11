@@ -1,3 +1,5 @@
+// ignore_for_file: non_constant_identifier_names, avoid_init_to_null
+
 import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
@@ -7,6 +9,7 @@ import 'package:pin_code_fields/pin_code_fields.dart';
 import 'package:vixx_app/Config/Color.dart';
 import 'package:vixx_app/Config/Style.dart';
 import 'package:vixx_app/Screen/Password/create_new_password.dart';
+import 'package:vixx_app/Screen/login.dart';
 import 'package:vixx_app/Widget/ButtonWidget.dart';
 
 class VerifyEmail extends StatefulWidget{
@@ -19,16 +22,18 @@ class VerifyEmailState extends State <VerifyEmail>{
   GlobalKey<FormState> globalFormKey = GlobalKey<FormState>();
   final scaffoldKey = GlobalKey<ScaffoldState>();
 
+  Timer? timer;
+
   bool isLoading=false;
 
-  String email, code;
+  String? email, code;
   TextEditingController emailController = TextEditingController();
   TextEditingController codeController = TextEditingController();
   TextEditingController textEditingController = TextEditingController();
   // ..text = "123456";
 
   // ignore: close_sinks
-  StreamController<ErrorAnimationType> errorController;
+  StreamController<ErrorAnimationType>? errorController;
 
   bool hasError = false;
   String currentText = "";
@@ -42,7 +47,7 @@ class VerifyEmailState extends State <VerifyEmail>{
 
   @override
   void dispose() {
-    errorController.close();
+    errorController!.close();
 
     super.dispose();
   }
@@ -74,15 +79,32 @@ class VerifyEmailState extends State <VerifyEmail>{
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Verify Your Email', style: setStyleContent(context,Colors.black,35,FontWeight.bold),),
-                Text('We have sent a verification\ncode to your email',  style: setStyleContent(context,Colors.black,20,FontWeight.normal),),
+                Row(
+                  mainAxisAlignment:  MainAxisAlignment.spaceBetween,
+                  children: [
+                    GestureDetector(
+                      child: Icon(Icons.arrow_back_sharp, size: 25,),
+                      onTap: (){
+                        Navigator.push(context,MaterialPageRoute(builder: (context) => LoginPage()));
+                      },
+                    ),
+                    // GestureDetector(
+                    //   child:  Icon(Icons.person_outline_sharp),
+                    //   onTap: (){
+                    //     Navigator.push(context,MaterialPageRoute(builder: (context) => AccountInformation()));
+                    //   },
+                    // ),
+                  ],
+                ),
+                Text('Verify Your Email', style: setStyleContent(context,Colors.black,25,FontWeight.bold),),
+                Text('We have sent a verification\ncode to your email',  style: setStyleContent(context,Colors.black,13,FontWeight.normal),),
                 SizedBox(height:ScreenUtil().setHeight(60.0)),
                 Text('Email',  style: setStyleContent(context,Colors.black,18,FontWeight.bold),),
                 TextFormField(
                   keyboardType: TextInputType.emailAddress,
                   controller: emailController,
                   onSaved: (val) {
-                    email = val;
+                    email = val!;
                   },
                   validator: (value) {
                     if (value == null || value.isEmpty) {
@@ -119,10 +141,10 @@ class VerifyEmailState extends State <VerifyEmail>{
                         blinkWhenObscuring: true,
                         animationType: AnimationType.fade,
                         onSaved:  (val) {
-                          email = val;
+                          email = val!;
                         },
                         validator: (v) {
-                          if (v.length < 3) {
+                          if (v!.length < 3) {
                             return "Input the otp sent to your mail";
                           } else {
                             return null;
@@ -205,9 +227,15 @@ class VerifyEmailState extends State <VerifyEmail>{
                 AppButton(text: "Verify", onPressed: () async{
                   showDialog(
                       context: context,
-                      builder: (BuildContext context) {
-                        return Center(child: CircularProgressIndicator(),);
+                      builder: (BuildContext context) { timer = Timer(Duration(seconds: 4), () {
+                        Navigator.pop(context);
                       });
+                      return Center(child: CircularProgressIndicator(),);
+                      }).then((val){
+                    if (timer!.isActive) {
+                      timer!.cancel();
+                    }
+                  });
                   await VerifyAction();
                     // If the form is valid, display a snackbar. In the real world,
                     // you'd often call a server or save the information in a database.
@@ -238,6 +266,7 @@ class VerifyEmailState extends State <VerifyEmail>{
       'code': code
     };
     print(data);
+    var jsonResponse = null;
     String body = json.encode(data);
     String Url = "https://thevix.club/apimaster.php";
     var response = await http.post(Uri.parse(Url),
@@ -249,15 +278,18 @@ class VerifyEmailState extends State <VerifyEmail>{
     );
     print(response.body);
     print(response.statusCode);
-    if(response.statusCode == 200){
+    if(response.statusCode == 200)
+      jsonResponse = json.decode(response.body);
+    if(jsonResponse['status'] == 'success'){
       setState(() {
         isLoading = false;
       });
       // Navigator used to enter inside app if the authentication is correct
+
         // If the form is valid, display a snackbar. In the real world,
         // you'd often call a server or save the information in a database.
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Verification Confirm'),  duration: const Duration(seconds: 3),),
+          const SnackBar(content: Text('Otp confirm successfully'),  duration: const Duration(seconds: 3),),
 
         );
 
@@ -266,13 +298,15 @@ class VerifyEmailState extends State <VerifyEmail>{
             builder: (BuildContext context) => CreatePassword(),
           ),
               (Route<dynamic> route) => false);
-
     } else {
       setState(() {
         isLoading = false;
       });
       print(response.body.toString());
+      ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Please enter your mail or valid otp'),  duration: const Duration(seconds: 3),));
+
     }
   }
-
 }
+

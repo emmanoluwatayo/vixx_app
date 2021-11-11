@@ -24,7 +24,7 @@ class TeamsPageState extends State <TeamsPage>{
         onPressed: () {
           Navigator.push(context,MaterialPageRoute(builder: (context) => BottomNavBar()));
         },
-        icon: Icon(Icons.arrow_back_ios_sharp, size: 20,),
+        icon:  Icon(Icons.arrow_back_sharp, size: 25,),
       ),
       actions: [
         IconButton(

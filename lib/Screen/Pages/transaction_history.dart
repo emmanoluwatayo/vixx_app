@@ -17,20 +17,17 @@ class TransactionHistoryPage extends StatefulWidget{
 
 class TransactionHistoryPageState extends State <TransactionHistoryPage>{
 
- // final items = List<String>.generate(10000, (i) => "Item $i");
-  String totalAmount = "0", totalDate = "0", remark= "0";
+  String totalAmount = "amount", totalDate = "date", remark= "remark";
 
-  Future <List<void>> futureData;
-  String deposit;
+  Future <List<void>>? futureData;
+  String? history, page;
 
   @override
   void initState() {
-    displaySummary(deposit);
+    displaySummary();
     super.initState();
 
   }
-
-  String type, page;
 
   bool isLoading=false;
 
@@ -56,9 +53,9 @@ class TransactionHistoryPageState extends State <TransactionHistoryPage>{
                   mainAxisAlignment:  MainAxisAlignment.spaceBetween,
                   children: [
                     GestureDetector(
-                      child: Icon(Icons.arrow_back_ios_sharp, size: 20,),
+                      child: Icon(Icons.arrow_back_sharp, size: 25,),
                       onTap: (){
-                        Navigator.push(context,MaterialPageRoute(builder: (context) => BottomNavBar()));
+                        Navigator.of(context).pop();
                       },
                     ),
                     GestureDetector(
@@ -117,48 +114,61 @@ class TransactionHistoryPageState extends State <TransactionHistoryPage>{
                   ],
                 ),
                 SizedBox(height: 15,),
-                 Container(
-                   margin: const EdgeInsets.symmetric(vertical: 20.0),
-                   height: 500.0,
-                   child: ListView(
-                     scrollDirection: Axis.vertical,
-                     children: [
-                       GestureDetector(
-                       child:  Row(
-                         children: [
-                           Container(
-                             padding: EdgeInsets.all(10),
-                             height: 40,
-                             width: 40,
-                             decoration: BoxDecoration(
-                                 borderRadius: BorderRadius.circular(8),
-                                 color: ColorConstant.pinkColor
-                             ),
-                             child: Center(
-                               child: Image.asset("assets/images/wallet_icon.png", height: 25,),
-                             ),
-                           ),
-                           SizedBox(width: 12,),
-                           Column(
-                             crossAxisAlignment: CrossAxisAlignment.start,
-                             children: [
-                               Text("$remark", style: setStyleContent(context,ColorConstant.black,12,FontWeight.w400)),
-                               Text("Successful", style: setStyleContent(context,ColorConstant.greenColor,10,FontWeight.w400)),
-                             ],
-                           ),
-                           Spacer(),
-                           Column(
-                             children: [
-                               Text("USDT $totalAmount", style: setStyleContent(context,ColorConstant.black,12,FontWeight.bold)),
-                               Text("$totalDate", style: setStyleContent(context,ColorConstant.black,10,FontWeight.w300))
-                             ],
-                           )
-                         ],
-                       ),
-                     ),
-                     ],
-                   ),
-                 ),
+                Column(
+                  children: [
+                    Container(
+                      padding: EdgeInsets.all(5),
+                      height: 1500.0,
+                      child: ListView.separated(
+                        primary: false,
+                        shrinkWrap: true,
+                        physics: NeverScrollableScrollPhysics(),
+                        itemCount: 50,
+                        itemBuilder: (context, index) {
+                          return     GestureDetector(
+                            child:  Row(
+                              children: [
+                                Container(
+                                  padding: EdgeInsets.all(10),
+                                  height: 40,
+                                  width: 40,
+                                  decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(8),
+                                      color: ColorConstant.primaryColor
+                                  ),
+                                  child: Center(
+                                    child: Image.asset("assets/images/wallet_icon.png", height: 25,),
+                                  ),
+                                ),
+                                SizedBox(width: 12,),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(" ${remark}", style: setStyleContent(context,ColorConstant.black,12,FontWeight.w400)),
+                                    Text("Successful", style: setStyleContent(context,ColorConstant.greenColor,10,FontWeight.w400)),
+                                  ],
+                                ),
+                                Spacer(),
+                                Column(
+                                  children: [
+                                    Text("usdt ${totalAmount}", style: setStyleContent(context,ColorConstant.black,12,FontWeight.bold)),
+                                    Text("${totalDate}", style: setStyleContent(context,ColorConstant.black,10,FontWeight.w300))
+                                  ],
+                                )
+                              ],
+                            ),
+                          );
+                        },
+                        separatorBuilder: (context, index) {
+                          return Divider(
+                            thickness: 1,
+                            indent: 50,
+                          );
+                        },
+                      ),
+                    )
+                  ],
+                )
               ],
             ),
           ),
@@ -167,10 +177,9 @@ class TransactionHistoryPageState extends State <TransactionHistoryPage>{
     );
   }
 
-  Future<void> displaySummary(String deposit) async {
+  Future<void> displaySummary() async {
     Map data = {
-      'type': type,
-      'page': page
+      'type': history,
     };
     print(data);
     String body = json.encode(data);
@@ -178,7 +187,7 @@ class TransactionHistoryPageState extends State <TransactionHistoryPage>{
     var response = await http.post(Uri.parse(Url),
         headers: {
           "Content-Type": "application/json",
-          "Operation": "deposit",
+          "Operation": "requery",
           "Authorization": "hthwijlewivcbeusnwjx6yqldbdi"
         },
 
@@ -189,13 +198,9 @@ class TransactionHistoryPageState extends State <TransactionHistoryPage>{
     print(response.statusCode);
     if (response.statusCode == 200) {
       print(response.body.toString()); // for Printing the token
-      var data = response.body;
-      var  userAccount = json.decode(data);
-      setState(() {
-        totalAmount = userAccount['amount'];
-        totalDate = userAccount['date'];
-        remark = userAccount['remark'];
-      });
+
+
+
     } else {
       print('error');
     }

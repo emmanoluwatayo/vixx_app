@@ -8,10 +8,10 @@ class AccountWidget extends StatelessWidget {
   final String image;
 
   AccountWidget({
-     this.onPressed,
-     this.text,
-     this.color,
-     this.image,
+     required this.onPressed,
+     required this.text,
+     required this.color,
+     required this.image,
   });
 
   @override

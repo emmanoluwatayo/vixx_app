@@ -1,10 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:vixx_app/Config/Color.dart';
 import 'package:vixx_app/Config/Style.dart';
 import 'package:vixx_app/Screen/HomeScreen/bottom_nav.dart';
-import 'package:vixx_app/Screen/HomeScreen/homesdreen.dart';
-import 'package:vixx_app/Screen/Password/create_new_password.dart';
 import 'package:vixx_app/Screen/login.dart';
 import 'package:vixx_app/Screen/verify_email.dart';
 
@@ -14,7 +14,27 @@ class AccountInformation extends StatefulWidget{
 }
 
 class AccountInformationState extends State <AccountInformation>{
+
+  String  lastname = '0';
+  String   firstname ='0';
+  String  email = '0';
+  String  phonenumber = '0';
+  Timer? timer;
   GlobalKey<FormState> globalFormKey = GlobalKey<FormState>();
+
+  var prefs;
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    readData();
+    reademail();
+    readfirstname();
+    readphonenumber();
+  }
+
+
   @override
   Widget build(BuildContext context) {
     // TODO: implement build
@@ -37,9 +57,9 @@ class AccountInformationState extends State <AccountInformation>{
                   mainAxisAlignment:  MainAxisAlignment.spaceBetween,
                   children: [
                     GestureDetector(
-                      child: Icon(Icons.arrow_back_ios_sharp, size: 20,),
+                      child: Icon(Icons.arrow_back_sharp, size: 25,),
                       onTap: (){
-                          Navigator.push(context,MaterialPageRoute(builder: (context) => BottomNavBar()));
+                        Navigator.of(context).pop();
                       },
                     ),
 
@@ -54,7 +74,7 @@ class AccountInformationState extends State <AccountInformation>{
                   child: new Image.asset('assets/icons/avatar.png', height: 100, color: ColorConstant.primaryColor,) //For Image Asset
                 ),
                 SizedBox(height: 15,),
-                Text("Elsie Roberts", style: setStyleContent(context,ColorConstant.primaryColor,18,FontWeight.bold)),
+                Text("$firstname $lastname", style: setStyleContent(context,ColorConstant.primaryColor,18,FontWeight.bold)),
                 SizedBox(height: 5,),
                 GestureDetector(
                   child:  Center(
@@ -64,13 +84,13 @@ class AccountInformationState extends State <AccountInformation>{
                         decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(12), color: ColorConstant.primaryColor),
                         child: Center(
-                          child: Text("080123456789", style: setStyleContent(context, ColorConstant.slightWhiteColor, 18, FontWeight.bold),),
+                          child: Text("$phonenumber", style: setStyleContent(context, ColorConstant.slightWhiteColor, 18, FontWeight.bold),),
                         ),
                       )
                   ),
                 ),
                 SizedBox(height: 5,),
-                Text("elseiroberts@gmail.com", style: setStyleContent(context,ColorConstant.primaryColor,14,FontWeight.bold)),
+                Text("$email", style: setStyleContent(context,ColorConstant.primaryColor,14,FontWeight.bold)),
                 SizedBox(height: 10,),
                 Container(
                   height: 40,
@@ -113,8 +133,17 @@ class AccountInformationState extends State <AccountInformation>{
                     showDialog(
                         context: context,
                         builder: (BuildContext context) {
-                          return Center(child: CircularProgressIndicator(),);
-                        });
+                          timer = Timer(Duration(seconds: 4), () {
+                            Navigator.of(context).pop();
+                          });
+                          return Center(child: CircularProgressIndicator(
+                            color: ColorConstant.primaryColor,
+                          ),);
+                        }).then((val){
+                      if (timer!.isActive) {
+                        timer!.cancel();
+                      }
+                    });
                     await LogoutAction();
 
                       // If the form is valid, display a snackbar. In the real world,
@@ -123,7 +152,7 @@ class AccountInformationState extends State <AccountInformation>{
                         const SnackBar(content: Text('Log out successful')),
                       );
                     SharedPreferences prefs = await SharedPreferences.getInstance();
-                    prefs.remove('username');
+                    prefs.clear();
                     Navigator.of(context).pushNamedAndRemoveUntil('/login', (Route<dynamic> route) => false);
                   },
                 ),
@@ -157,7 +186,7 @@ class AccountInformationState extends State <AccountInformation>{
                               child: Column(
                                 children: [
                                   SizedBox(height: 20,),
-                                  Text("oluwatayoemmanuel02@gmail.com", style: setStyleContent(context, ColorConstant.primaryColor, 15, FontWeight.bold),),
+                                  Text("$email", style: setStyleContent(context, ColorConstant.primaryColor, 12, FontWeight.bold),),
                                   SizedBox(height: 10,),
                                   Container(
                                     height: 80,
@@ -189,7 +218,7 @@ class AccountInformationState extends State <AccountInformation>{
                                           height: 40,
                                           width: 280,
                                           decoration: BoxDecoration(
-                                              borderRadius: BorderRadius.circular(8), color: ColorConstant.greenColor),
+                                              borderRadius: BorderRadius.circular(8), color: ColorConstant.primaryColor),
                                           child: Center(
                                             child: Text("Send", style: setStyleContent(context, ColorConstant.slightWhiteColor, 12, FontWeight.bold),),
                                           ),
@@ -199,8 +228,17 @@ class AccountInformationState extends State <AccountInformation>{
                                       showDialog(
                                           context: context,
                                           builder: (BuildContext context) {
-                                            return Center(child: CircularProgressIndicator(),);
-                                          });
+                                            timer = Timer(Duration(seconds: 4), () {
+                                              Navigator.of(context).pop();
+                                            });
+                                            return Center(child: CircularProgressIndicator(
+                                              color: ColorConstant.primaryColor,
+                                            ),);
+                                          }).then((val){
+                                        if (timer!.isActive) {
+                                          timer!.cancel();
+                                        }
+                                      });
                                       await LogoutAction();
                                       Navigator.push(context,MaterialPageRoute(builder: (context) => BottomNavBar()));
                                     },
@@ -222,14 +260,37 @@ class AccountInformationState extends State <AccountInformation>{
     );
   }
 
-  Future<void> main() async {
-    WidgetsFlutterBinding.ensureInitialized();
+  readData() async {
     SharedPreferences prefs = await SharedPreferences.getInstance();
-    var username = prefs.getString('username');
-    print(username);
-    runApp(MaterialApp(home: username == null ? LoginPage() : BottomNavBar()));
+    if (prefs.getString("lastname",) == null)
+      setState(() => lastname = '0',);
+    else
+      setState(() => lastname = prefs.getString("lastname")!);
   }
 
+  readfirstname() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    if (prefs.getString("firstname",) == null)
+      setState(() => firstname = '0',);
+    else
+      setState(() => firstname = prefs.getString("firstname")!);
+  }
+
+  readphonenumber() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    if (prefs.getString("phonenumber",) == null)
+      setState(() => phonenumber = '0',);
+    else
+      setState(() => phonenumber = prefs.getString("phonenumber")!);
+  }
+
+  reademail() async {
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    if (prefs.getString("email",) == null)
+      setState(() => email = '0',);
+    else
+      setState(() => email = prefs.getString("email")!);
+  }
 
   Future<bool> LogoutAction() async {
     //replace the below line of code with your login request

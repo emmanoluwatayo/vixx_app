@@ -1,7 +1,9 @@
 // ignore_for_file: non_constant_identifier_names
 
+import 'dart:async';
 import 'dart:convert';
 
+import 'package:email_validator/email_validator.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:vixx_app/Config/Color.dart';
@@ -17,14 +19,18 @@ class RegistrationPage extends StatefulWidget{
 }
 
 class RegistrationPageState extends State <RegistrationPage>{
+
+  Timer? timer;
+  bool hidePassword2 = true;
   bool hidePassword = true;
   bool isLoading=false;
-  String firstname, lastname, email, username, password, sponsor, phone;
+  String? firstname, lastname, email, username, password, confirmpassword, sponsor, phone;
   final TextEditingController firstnameController = new TextEditingController();
   final TextEditingController lastnameController = new TextEditingController();
   final TextEditingController emailController = new TextEditingController();
   final TextEditingController usernameController = new TextEditingController();
   final TextEditingController passwordController = new TextEditingController();
+  final TextEditingController confirmpasswordController = new TextEditingController();
   final TextEditingController sponsorController = new TextEditingController();
   final TextEditingController phoneController = new TextEditingController();
   GlobalKey<FormState> globalFormKey = GlobalKey<FormState>();
@@ -46,10 +52,27 @@ class RegistrationPageState extends State <RegistrationPage>{
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                SizedBox(height:  20.0,),
-                Text('Register', style: setStyleContent(context,Colors.black,30,FontWeight.bold) ),
-                SizedBox(height:  12.0,),
-                Text('Enter your email and password \nto register',  style: setStyleContent(context,Colors.black,15,FontWeight.normal),),
+                Row(
+                  mainAxisAlignment:  MainAxisAlignment.spaceBetween,
+                  children: [
+                    GestureDetector(
+                      child: Icon(Icons.arrow_back_sharp, size: 25,),
+                      onTap: (){
+                        Navigator.of(context).pop();
+                      },
+                    ),
+                    // GestureDetector(
+                    //   child:  Icon(Icons.person_outline_sharp),
+                    //   onTap: (){
+                    //     Navigator.push(context,MaterialPageRoute(builder: (context) => AccountInformation()));
+                    //   },
+                    // ),
+                  ],
+                ),
+                SizedBox(height:  5.0,),
+                Text('Register', style: setStyleContent(context,Colors.black,25,FontWeight.bold) ),
+                SizedBox(height:  5.0,),
+                Text('Enter your email and password \nto register',  style: setStyleContent(context,Colors.black,13,FontWeight.normal),),
                 SizedBox(height:  30.0,),
                 Form(
                   key: globalFormKey,
@@ -61,11 +84,11 @@ class RegistrationPageState extends State <RegistrationPage>{
                         keyboardType: TextInputType.text,
                         controller: firstnameController,
                         onSaved: (val) {
-                           firstname = val;
+                           firstname = val!;
                         },
                         validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please enter your firstname';
+                          if (value!.length < 3) {
+                            return 'Firstname is invalid';
                           }
                           return null;
                         },
@@ -89,11 +112,11 @@ class RegistrationPageState extends State <RegistrationPage>{
                         keyboardType: TextInputType.text,
                         controller: lastnameController,
                         onSaved: (val) {
-                          lastname = val;
+                          lastname = val!;
                         },
                         validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please enter your lastname';
+                          if (value!.length < 3) {
+                            return 'Lastname is invalid';
                           }
                           return null;
                         },
@@ -117,14 +140,9 @@ class RegistrationPageState extends State <RegistrationPage>{
                         keyboardType: TextInputType.emailAddress,
                         controller: emailController,
                         onSaved: (val) {
-                          email = val;
+                          email = val!;
                         },
-                        validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please enter valid email';
-                          }
-                          return null;
-                        },
+                        validator: (val) => EmailValidator.validate(val!) ? null : "Please enter a valid email",
                         decoration: InputDecoration(
                           hintText: 'Enter here',
                           hintStyle: setStyleContent(context,Colors.black, 10,FontWeight.w300),
@@ -145,11 +163,11 @@ class RegistrationPageState extends State <RegistrationPage>{
                         keyboardType: TextInputType.text,
                         controller: usernameController,
                         onSaved: (val) {
-                          username = val;
+                          username = val!;
                         },
                         validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please enter valid username';
+                          if (value!.length < 3) {
+                            return 'Invalid username';
                           }
                           return null;
                         },
@@ -168,16 +186,68 @@ class RegistrationPageState extends State <RegistrationPage>{
                         ),
                       ),
                       SizedBox(height: 20.0),
+                      Text('Referral', style: setStyleContent(context,Colors.black,12,FontWeight.bold) ),
+                      TextFormField(
+                        keyboardType: TextInputType.text,
+                        controller: sponsorController,
+                        onSaved: (val) {
+                          sponsor = val!;
+                        },
+                        decoration: InputDecoration(
+                          hoverColor: Colors.deepPurpleAccent,
+                          hintText: 'Enter here',
+                          hintStyle: setStyleContent(context,Colors.black,10,FontWeight.w300),
+                          contentPadding: EdgeInsets.fromLTRB(20.0, 15.0, 20.0, 15.0),
+                          prefixIcon: Icon(Icons.person_add_alt_1, color: ColorConstant.primaryColor,),
+                          enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8.0),
+                              borderSide: const BorderSide(color: Colors.black, width: 0.5)),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8.0),
+                            borderSide: BorderSide(color: ColorConstant.primaryColor, width: 1.0),
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: 20.0),
+                      Text('Phone Number', style: setStyleContent(context,Colors.black,12,FontWeight.bold) ),
+                      TextFormField(
+                        keyboardType: TextInputType.number,
+                        controller: phoneController,
+                        onSaved: (val) {
+                          phone = val!;
+                        },
+                        validator: (value) {
+                          if  (value!.length != 11) {
+                            return 'Invalid phone number';
+                          }
+                          return null;
+                        },
+                        decoration: InputDecoration(
+                          hoverColor: Colors.deepPurpleAccent,
+                          hintText: 'Enter here',
+                          hintStyle: setStyleContent(context,Colors.black,10,FontWeight.w300),
+                          contentPadding: EdgeInsets.fromLTRB(20.0, 15.0, 20.0, 15.0),
+                          prefixIcon: Icon(Icons.call, color: ColorConstant.primaryColor,),
+                          enabledBorder: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(8.0),
+                              borderSide: const BorderSide(color: Colors.black, width: 0.5)),
+                          focusedBorder: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(8.0),
+                            borderSide: BorderSide(color: ColorConstant.primaryColor, width: 1.0),
+                          ),
+                        ),
+                      ),
+                      SizedBox(height: 20.0),
                       Text('Password', style: setStyleContent(context,Colors.black,12,FontWeight.bold) ),
                       TextFormField(
                         obscureText: hidePassword,
                         controller: passwordController,
                         onSaved: (val) {
-                          password = val;
+                          password = val!;
                         },
                         validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Password is required';
+                          if  (value!.isEmpty) {
+                            return 'Password must be more than 4 characters';
                           }
                           return null;
                         },
@@ -205,39 +275,20 @@ class RegistrationPageState extends State <RegistrationPage>{
                         ),
                       ),
                       SizedBox(height: 20.0),
-                      Text('Referral', style: setStyleContent(context,Colors.black,12,FontWeight.bold) ),
+                      Text('Confirm password', style: setStyleContent(context,Colors.black,12,FontWeight.bold) ),
                       TextFormField(
-                        keyboardType: TextInputType.text,
-                        controller: sponsorController,
+                        obscureText: hidePassword2,
+                        controller: confirmpasswordController,
                         onSaved: (val) {
-                          sponsor = val;
-                        },
-                        decoration: InputDecoration(
-                          hoverColor: Colors.deepPurpleAccent,
-                          hintText: 'Enter here',
-                          hintStyle: setStyleContent(context,Colors.black,10,FontWeight.w300),
-                          contentPadding: EdgeInsets.fromLTRB(20.0, 15.0, 20.0, 15.0),
-                          prefixIcon: Icon(Icons.person_add_alt_1, color: ColorConstant.primaryColor,),
-                          enabledBorder: OutlineInputBorder(
-                              borderRadius: BorderRadius.circular(8.0),
-                              borderSide: const BorderSide(color: Colors.black, width: 0.5)),
-                          focusedBorder: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(8.0),
-                            borderSide: BorderSide(color: ColorConstant.primaryColor, width: 1.0),
-                          ),
-                        ),
-                      ),
-                      SizedBox(height: 20.0),
-                      Text('Phone Number', style: setStyleContent(context,Colors.black,12,FontWeight.bold) ),
-                      TextFormField(
-                        keyboardType: TextInputType.number,
-                        controller: phoneController,
-                        onSaved: (val) {
-                          phone = val;
+                          password = val!;
                         },
                         validator: (value) {
-                          if (value == null || value.isEmpty) {
-                            return 'Please enter valid phone number';
+                          if  (value!.isEmpty) {
+                            return 'Password must be more than 4 characters';
+                          }
+                          if(passwordController.text != confirmpasswordController.text)
+                          {
+                            return "Password Do not match";
                           }
                           return null;
                         },
@@ -246,13 +297,21 @@ class RegistrationPageState extends State <RegistrationPage>{
                           hintText: 'Enter here',
                           hintStyle: setStyleContent(context,Colors.black,10,FontWeight.w300),
                           contentPadding: EdgeInsets.fromLTRB(20.0, 15.0, 20.0, 15.0),
-                          prefixIcon: Icon(Icons.call, color: ColorConstant.primaryColor,),
+                          prefixIcon: Icon(Icons.lock, color: ColorConstant.primaryColor,),
                           enabledBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(8.0),
                               borderSide: const BorderSide(color: Colors.black, width: 0.5)),
                           focusedBorder: OutlineInputBorder(
                             borderRadius: BorderRadius.circular(8.0),
                             borderSide: BorderSide(color: ColorConstant.primaryColor, width: 1.0),
+                          ),
+                          suffixIcon: GestureDetector(
+                            child: Icon(hidePassword2? Icons.visibility_off: Icons.visibility, color: ColorConstant.black,),
+                            onTap: (){
+                              setState(() {
+                                hidePassword2 = !hidePassword2;
+                              });
+                            },
                           ),
                         ),
                       ),
@@ -262,13 +321,19 @@ class RegistrationPageState extends State <RegistrationPage>{
                 ),
                 SizedBox(height: 30,),
                 AppButton(text: "Register", onPressed: () async {
-                  showDialog(
-                      context: context,
-                      builder: (BuildContext context) {
+                    showDialog(
+                        context: context,
+                        builder: (BuildContext context) { timer = Timer(Duration(seconds: 4), () {
+                          Navigator.pop(context);
+                        });
                         return Center(child: CircularProgressIndicator(),);
-                      });
+                        }).then((val){
+                      if (timer!.isActive) {
+                        timer!.cancel();
+                      }
+                    });
                   await RegisterAction();
-                  if (globalFormKey.currentState .validate()) {
+                  if (globalFormKey.currentState! .validate()) {
                     // If the form is valid, display a snackbar. In the real world,
                     // you'd often call a server or save the information in a database.
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -317,7 +382,7 @@ class RegistrationPageState extends State <RegistrationPage>{
     return true;
   }
 
-  register(  String firstname, lastname, email, username, password, sponsor, phone) async{
+  Future register(  String firstname, lastname, email, username, password, sponsor, phone) async{
     Map data = {
       'firstname': firstname,
       'lastname': lastname,
@@ -328,6 +393,7 @@ class RegistrationPageState extends State <RegistrationPage>{
       'phone': phone,
     };
     print(data);
+    var jsonResponse = null;
     String body = json.encode(data);
     String Url = "https://thevix.club/apimaster.php";
     var response = await http.post(Uri.parse(Url),
@@ -339,38 +405,30 @@ class RegistrationPageState extends State <RegistrationPage>{
     );
     print(response.body);
     print(response.statusCode);
-    if (response.statusCode == 200) {
-      setState(() {
-        isLoading = false;
-      });
-      // Navigator used to enter inside app if the authentication is correct
-      if (globalFormKey.currentState .validate()) {
-        // If the form is valid, display a snackbar. In the real world,
-        // you'd often call a server or save the information in a database.
+    if (response.statusCode == 200)
+      jsonResponse = json.decode(response.body);
+      if(jsonResponse['status'] == 'success'){
+        setState(() {
+          isLoading = false;
+        });
+        if (globalFormKey.currentState! .validate()) {
+          // If the form is valid, display a snackbar. In the real world,
+          // you'd often call a server or save the information in a database.
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Registration successful'),  duration: const Duration(seconds: 3),),
+          );
+          Navigator.of(context).pushAndRemoveUntil(MaterialPageRoute(builder: (BuildContext context) => LoginPage()), (Route<dynamic> route) => false);
+          print(jsonResponse);
+        }
+      }
+      else {
+        setState(() {
+          isLoading = false;
+        });
+        print("The error message is: ${response.body}");
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Registration successful'),  duration: const Duration(seconds: 3),),
-
-        );
-        Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute(
-              builder: (BuildContext context) => LoginPage(),
-            ),
-                (Route<dynamic> route) => true);
-      }  else{
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Incomplete details'),),);
-        Navigator.of(context).pushAndRemoveUntil(
-            MaterialPageRoute(
-              builder: (BuildContext context) => RegistrationPage(),
-            ),
-                (Route<dynamic> route) => true);
+            const SnackBar(content: Text('Email or Username already exist'),
+              duration: const Duration(seconds: 2),));
       }
     }
-    else {
-      setState(() {
-        isLoading = false;
-      });
-      print(response.body.toString());
-    }
   }
-}

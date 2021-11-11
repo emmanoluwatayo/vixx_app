@@ -3,6 +3,7 @@ import 'package:vixx_app/Config/Color.dart';
 import 'package:vixx_app/Config/Style.dart';
 import 'package:vixx_app/Screen/Account/account_info_page.dart';
 import 'package:vixx_app/Screen/HomeScreen/bottom_nav.dart';
+import 'package:vixx_app/Screen/HomeScreen/homesdreen.dart';
 import 'package:vixx_app/Screen/Teams/team_list_page.dart';
 
 class TeamsPageList extends StatefulWidget{
@@ -18,9 +19,9 @@ class TeamsPageListState extends State <TeamsPageList>{
       elevation: 0.0,
       leading: IconButton(
         onPressed: () {
-          Navigator.push(context,MaterialPageRoute(builder: (context) => BottomNavBar()));
+          Navigator.of(context).pop();
         },
-        icon: Icon(Icons.arrow_back_ios_sharp, size: 20,),
+        icon: Icon(Icons.arrow_back_sharp, size: 25,),
       ),
       actions: [
         IconButton(

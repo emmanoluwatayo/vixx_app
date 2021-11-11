@@ -6,11 +6,16 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'package:vixx_app/Screen/Walkthrough/onboard.dart';
 import 'package:vixx_app/Screen/login.dart';
 
-void main() {
-  runApp(MyApp());
+void main() async{
+  WidgetsFlutterBinding.ensureInitialized();
+
+  SharedPreferences sharedPref = await SharedPreferences.getInstance();
+  runApp(MyApp(sharedPref));
 }
 
 class MyApp extends StatelessWidget {
+  final SharedPreferences sharedPref;
+  MyApp(this.sharedPref);
     @override
   Widget build(BuildContext context) {
     SystemChrome.setEnabledSystemUIOverlays(SystemUiOverlay.values);
@@ -24,7 +29,7 @@ class MyApp extends StatelessWidget {
     ));
     return  ScreenUtilInit(
             designSize: Size(375, 812),
-            builder: () =>MaterialApp(
+            builder: () => MaterialApp(
               debugShowCheckedModeBanner: false,
               title: 'Flutter Demo',
               theme: ThemeData(

@@ -1,10 +1,14 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:vixx_app/Config/Color.dart';
 import 'package:vixx_app/Config/Style.dart';
+import 'package:vixx_app/Screen/Account/account_info_page.dart';
 import 'package:vixx_app/Screen/HomeScreen/bottom_nav.dart';
 import 'package:http/http.dart' as http;
 import 'package:vixx_app/Screen/Pages/transaction_history.dart';
+import 'package:vixx_app/Screen/Pages/withdraw_trans_page.dart';
 
 class WithdrawalPage extends StatefulWidget{
   @override
@@ -12,7 +16,8 @@ class WithdrawalPage extends StatefulWidget{
 }
 
 class WithdrawalPageState extends State <WithdrawalPage>{
-  String amount;
+  Timer? timer;
+  String? amount;
   TextEditingController amountController = TextEditingController();
   GlobalKey<FormState> globalFormKey = GlobalKey<FormState>();
   final scaffoldKey = GlobalKey<ScaffoldState>();
@@ -66,7 +71,7 @@ class WithdrawalPageState extends State <WithdrawalPage>{
                   mainAxisAlignment:  MainAxisAlignment.spaceBetween,
                   children: [
                     GestureDetector(
-                      child: Icon(Icons.arrow_back_ios_sharp, size: 20,),
+                      child: Icon(Icons.arrow_back_sharp, size: 25,),
                       onTap: (){
                         Navigator.push(context,MaterialPageRoute(builder: (context) => BottomNavBar()));
                       },
@@ -74,8 +79,7 @@ class WithdrawalPageState extends State <WithdrawalPage>{
                     GestureDetector(
                       child:  Icon(Icons.person_outline_sharp),
                       onTap: (){
-                        withdrawn("4040");
-                       // Navigator.push(context,MaterialPageRoute(builder: (context) => AccountInformation()));
+                        Navigator.push(context,MaterialPageRoute(builder: (context) => AccountInformation()));
                       },
                     ),
                   ],
@@ -126,17 +130,17 @@ class WithdrawalPageState extends State <WithdrawalPage>{
                                                 crossAxisAlignment: CrossAxisAlignment.end,
                                                 children: [
                                                   Text("USDT ${totalBal}",style: setStyleContent(context,Colors.black,25,FontWeight.bold)),
-                                                  Text("Available balance",style: setStyleContent(context,ColorConstant.greenColor,15,FontWeight.w300)),
+                                                  Text("Available balance",style: setStyleContent(context,ColorConstant.primaryColor,15,FontWeight.w300)),
                                                   SizedBox(height: 15,),
                                                   Column(
                                                       crossAxisAlignment: CrossAxisAlignment.start,
                                                       children: [
                                                         Text('Amount',style: setStyleContent(context,Colors.black,12,FontWeight.bold)),
                                                         TextFormField(
-                                                          keyboardType: TextInputType.text,
+                                                          keyboardType: TextInputType.number,
                                                           controller: amountController,
                                                           onSaved: (val) {
-                                                            amount = val;
+                                                            amount = val!;
                                                           },
                                                           decoration: InputDecoration(
                                                             hoverColor: Colors.deepPurpleAccent,
@@ -157,7 +161,7 @@ class WithdrawalPageState extends State <WithdrawalPage>{
                                                   ),
                                                   SizedBox(height: 10,),
                                                   Center(
-                                                    child:  Text("will be withdrawn from your wallet",style: setStyleContent(context,ColorConstant.greenColor,15,FontWeight.w300)),
+                                                   // child:  Text("will be withdrawn from your wallet",style: setStyleContent(context,ColorConstant.greenColor,15,FontWeight.w300)),
                                                   ),
                                                   SizedBox(height: 10,),
                                                   GestureDetector(
@@ -166,71 +170,14 @@ class WithdrawalPageState extends State <WithdrawalPage>{
                                                           height: 40,
                                                           width: 280,
                                                           decoration: BoxDecoration(
-                                                              borderRadius: BorderRadius.circular(8), color: ColorConstant.greenColor),
+                                                              borderRadius: BorderRadius.circular(8), color: ColorConstant.primaryColor),
                                                           child: Center(
                                                             child: Text("Proceed", style: setStyleContent(context, ColorConstant.slightWhiteColor, 12, FontWeight.bold),),
                                                           ),
                                                         )
                                                     ),
                                                     onTap: () {
-                                                      showModalBottomSheet(
-                                                          shape: RoundedRectangleBorder(
-                                                            borderRadius: BorderRadius.only( topLeft: Radius.circular(25),
-                                                                topRight: Radius.circular(25)),
-                                                          ),
-                                                          context: context,
-                                                          isScrollControlled: true,
-                                                          builder: (builder){
-                                                            return Padding(
-                                                              padding:  MediaQuery.of(context).viewInsets,
-                                                              child: Container(
-                                                                height: 300,
-                                                                padding: EdgeInsets.all(20),
-                                                                child: Column(
-                                                                  children: [
-                                                                    SizedBox(height: 10,),
-                                                                    Text("You are about to make a withdrawal of",style: setStyleContent(context,ColorConstant.greenColor,15,FontWeight.w300)),
-                                                                    SizedBox(height: 10,),
-                                                                    Text("$amount",style: setStyleContent(context,Colors.black,20,FontWeight.bold)),
-                                                                    SizedBox(height: 10,),
-                                                                    Text("from your wallet",style: setStyleContent(context,ColorConstant.greenColor,15,FontWeight.w300)),
-                                                                    SizedBox(height: 20,),
-                                                                    GestureDetector(
-                                                                      child:  Center(
-                                                                          child: Container(
-                                                                            height: 40,
-                                                                            width: 280,
-                                                                            decoration: BoxDecoration(
-                                                                                borderRadius: BorderRadius.circular(8), color: ColorConstant.greenColor),
-                                                                            child: Center(
-                                                                              child: Text("Confirm", style: setStyleContent(context, ColorConstant.slightWhiteColor, 12, FontWeight.bold),),
-                                                                            ),
-                                                                          )
-                                                                      ),
-                                                                      onTap: ()async{
-                                                                        showDialog(
-                                                                            context: context,
-                                                                            builder: (BuildContext context) {
-                                                                              return Center(child: CircularProgressIndicator(),);
-                                                                            });
-                                                                        await withdrawAction();
-                                                                          // If the form is valid, display a snackbar. In the real world,
-                                                                          // you'd often call a server or save the information in a database.
-                                                                          ScaffoldMessenger.of(context).showSnackBar(
-                                                                            const SnackBar(content: Text('Processing Data'), duration: const Duration(seconds: 2),),
-                                                                          );
-                                                                        withdrawn(amountController.text);
-
-
-                                                                      },
-                                                                    ),
-                                                                  ],
-                                                                ),
-                                                              ),
-
-                                                            );
-                                                          }
-                                                      );
+                                                      withwarning(context, amountController.text);
                                                     },
                                                   ),
                                                 ],
@@ -253,7 +200,7 @@ class WithdrawalPageState extends State <WithdrawalPage>{
                   children: [
                     Text("Transaction history", style: setStyleContent(context,ColorConstant.black,18,FontWeight.w600)),
                     GestureDetector(
-                      child:  Icon(Icons.arrow_forward_ios_sharp, size: 20,),
+                      child:  Text("View all", style: setStyleContent(context,ColorConstant.black,13,FontWeight.w600)),
                       onTap: (){
                         Navigator.push(context,MaterialPageRoute(builder: (context) => TransactionHistoryPage()));
                       },
@@ -262,219 +209,7 @@ class WithdrawalPageState extends State <WithdrawalPage>{
                   ],
                 ),
                 SizedBox(height: 15,),
-                Column(
-                  children: [
-                    GestureDetector(
-                      child:  Row(
-                        children: [
-                          Container(
-                            padding: EdgeInsets.all(10),
-                            height: 40,
-                            width: 40,
-                            decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(8),
-                                color: ColorConstant.pinkColor
-                            ),
-                            child: Center(
-                              child: Image.asset("assets/images/wallet_icon.png", height: 25,),
-                            ),
-                          ),
-                          SizedBox(width: 12,),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text("USDT Withdrawal", style: setStyleContent(context,ColorConstant.black,12,FontWeight.w400)),
-                              Text("Successful", style: setStyleContent(context,ColorConstant.greenColor,10,FontWeight.w400)),
-                            ],
-                          ),
-                          Spacer(),
-                          Column(
-                            children: [
-                              Text("\$3,019.00", style: setStyleContent(context,ColorConstant.black,12,FontWeight.bold)),
-                              Text("2 days ago", style: setStyleContent(context,ColorConstant.black,10,FontWeight.w300))
-                            ],
-                          )
-                        ],
-                      ),
-                    ),
-                    SizedBox(height: 10,),
-                    Divider(),
-                    SizedBox(height: 10,),
-                    GestureDetector(
-                      child: Row(
-                        children: [
-                          Container(
-                            padding: EdgeInsets.all(10),
-                            height: 40,
-                            width: 40,
-                            decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(8),
-                                color: ColorConstant.greenColor
-                            ),
-                            child: Center(
-                              child: Image.asset("assets/images/wallet_icon.png", height: 25,),
-                            ),
-                          ),
-                          SizedBox(width: 12,),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text("USDT Withdrawal", style: setStyleContent(context,ColorConstant.black,12,FontWeight.w400)),
-                              Text("Failed", style: setStyleContent(context,ColorConstant.pinkColor,10,FontWeight.w400)),
-                            ],
-                          ),
-                          Spacer(),
-                          Column(
-                            children: [
-                              Text("\$7,038", style: setStyleContent(context,ColorConstant.black,12,FontWeight.bold)),
-                              Text("Sep 27, 2019", style: setStyleContent(context,ColorConstant.black,10,FontWeight.w300))
-                            ],
-                          )
-                        ],
-                      ),
-                    ),
-                    SizedBox(height: 10,),
-                    Divider(),
-                    GestureDetector(
-                      child:  Row(
-                        children: [
-                          Container(
-                            padding: EdgeInsets.all(10),
-                            height: 40,
-                            width: 40,
-                            decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(8),
-                                color: ColorConstant.pinkColor
-                            ),
-                            child: Center(
-                              child: Image.asset("assets/images/wallet_icon.png", height: 25,),
-                            ),
-                          ),
-                          SizedBox(width: 12,),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text("USDT Withdrawal", style: setStyleContent(context,ColorConstant.black,12,FontWeight.w400)),
-                              Text("Failed", style: setStyleContent(context,ColorConstant.pinkColor,10,FontWeight.w400)),
-                            ],
-                          ),
-                          Spacer(),
-                          Column(
-                            children: [
-                              Text("\$60,337", style: setStyleContent(context,ColorConstant.black,12,FontWeight.bold)),
-                              Text("Oct 01, 2019", style: setStyleContent(context,ColorConstant.black,10,FontWeight.w300))
-                            ],
-                          )
-                        ],
-                      ),
-                    ),
-                    SizedBox(height: 10,),
-                    Divider(),
-                    GestureDetector(
-                      child: Row(
-                        children: [
-                          Container(
-                            padding: EdgeInsets.all(10),
-                            height: 40,
-                            width: 40,
-                            decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(8),
-                                color: ColorConstant.greenColor
-                            ),
-                            child: Center(
-                              child: Image.asset("assets/images/wallet_icon.png", height: 25,),
-                            ),
-                          ),
-                          SizedBox(width: 12,),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text("USDT Withdrawal", style: setStyleContent(context,ColorConstant.black,12,FontWeight.w400)),
-                              Text("Failed", style: setStyleContent(context,ColorConstant.pinkColor,10,FontWeight.w400)),
-                            ],
-                          ),
-                          Spacer(),
-                          Column(
-                            children: [
-                              Text("\$60,337", style: setStyleContent(context,ColorConstant.black,12,FontWeight.bold)),
-                              Text("Oct 01, 2019", style: setStyleContent(context,ColorConstant.black,10,FontWeight.w300))
-                            ],
-                          )
-                        ],
-                      ),
-                    ),
-                    SizedBox(height: 10,),
-                    Divider(),
-                    GestureDetector(
-                      child:  Row(
-                        children: [
-                          Container(
-                            padding: EdgeInsets.all(10),
-                            height: 40,
-                            width: 40,
-                            decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(8),
-                                color: ColorConstant.pinkColor
-                            ),
-                            child: Center(
-                              child: Image.asset("assets/images/wallet_icon.png", height: 25,),
-                            ),
-                          ),
-                          SizedBox(width: 12,),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text("USDT Withdrawal", style: setStyleContent(context,ColorConstant.black,12,FontWeight.w400)),
-                              Text("Successful", style: setStyleContent(context,ColorConstant.greenColor,10,FontWeight.w400)),
-                            ],
-                          ),
-                          Spacer(),
-                          Column(
-                            children: [
-                              Text("\$60,337", style: setStyleContent(context,ColorConstant.black,12,FontWeight.bold)),
-                              Text("Oct 01, 2019", style: setStyleContent(context,ColorConstant.black,10,FontWeight.w300))
-                            ],
-                          )
-                        ],
-                      ),
-                    ),
-                    SizedBox(height: 10,),
-                    Divider(),
-                    GestureDetector(
-                      child: Row(
-                        children: [
-                          Container(
-                            padding: EdgeInsets.all(10),
-                            height: 40,
-                            width: 40,
-                            decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(8),
-                                color: ColorConstant.greenColor
-                            ),
-                            child: Center(
-                              child: Image.asset("assets/images/wallet_icon.png", height: 25,),
-                            ),
-                          ),
-                          SizedBox(width: 12,),
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text("USDT Withdrawal", style: setStyleContent(context,ColorConstant.black,12,FontWeight.w400)),
-                              Text("Successful", style: setStyleContent(context,ColorConstant.greenColor,10,FontWeight.w400)),
-                            ],
-                          ),
-                          Spacer(),
-                          Column(
-                            children: [
-                              Text("\$60,337", style: setStyleContent(context,ColorConstant.black,12,FontWeight.bold)),
-                              Text("Oct 15, 2019", style: setStyleContent(context,ColorConstant.black,10,FontWeight.w300))
-                            ],
-                          )
-                        ],
-                      ),
-                    ),
-                  ],
-                )
+                WithdrawTransactionPage()
               ],
             ),
           ),
@@ -483,6 +218,65 @@ class WithdrawalPageState extends State <WithdrawalPage>{
     );
   }
 
+  withwarning(BuildContext context, String text) async {
+    String teamName = '';
+    return showDialog(
+      context: context,
+      barrierDismissible: false, // dialog is dismissible with a tap on the barrier
+      builder: (BuildContext context) {
+        return AlertDialog(
+            content: SingleChildScrollView(
+                child:  Padding(
+                  padding:  MediaQuery.of(context).viewInsets,
+                  child: Container(
+                    height: 200,
+                    padding: EdgeInsets.all(20),
+                    child: Column(
+                      children: [
+                        SizedBox(height: 10,),
+                        Text("You are about to make a\nwithdrawal of",style: setStyleContent(context,ColorConstant.black,14,FontWeight.w500), textAlign: TextAlign.center),
+                        SizedBox(height: 10,),
+                        Text("usdt ${amountController.text}",style: setStyleContent(context,Colors.black,20,FontWeight.bold)),
+                        SizedBox(height: 5,),
+                        GestureDetector(
+                          child:  Center(
+                              child: Container(
+                                height: 35,
+                                width: 280,
+                                decoration: BoxDecoration(
+                                    borderRadius: BorderRadius.circular(8), color: ColorConstant.primaryColor),
+                                child: Center(
+                                  child: Text("Confirm", style: setStyleContent(context, ColorConstant.slightWhiteColor, 12, FontWeight.bold),),
+                                ),
+                              )
+                          ),
+                          onTap: () async{
+                            showDialog(
+                                context: context,
+                                builder: (BuildContext context) {
+                                  return Center(child: CircularProgressIndicator(
+                                    color: ColorConstant.primaryColor,
+                                  ),);
+                                });
+                            await withdrawAction();
+
+                            // If the form is valid, display a snackbar. In the real world,
+                            // you'd often call a server or save the information in a database.
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(content: Text('Processing Data'), duration: const Duration(seconds: 2),),
+                            );
+                            withdrawn(amountController.text);
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+            )
+        );
+      },
+    );
+  }
 
   Future<bool> withdrawAction() async {
     //replace the below line of code with your login request
@@ -497,12 +291,14 @@ class WithdrawalPageState extends State <WithdrawalPage>{
     };
     print(data);
     String body = json.encode(data);
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? apikey = prefs.getString("apikey");
     String Url = "https://thevix.club/apimaster.php";
     var response = await http.post(Uri.parse(Url),
         headers: {
           "Content-Type": "application/json",
           "Operation": "summary",
-          "Authorization": "hthwijlewivcbeusnwjx6yqldbdi"
+          "Authorization": "$apikey"
         },
 
 
@@ -529,12 +325,14 @@ class WithdrawalPageState extends State <WithdrawalPage>{
     };
     print(data);
     String body = json.encode(data);
+    SharedPreferences prefs = await SharedPreferences.getInstance();
+    String? apikey = prefs.getString("apikey");
     String Url = "https://thevix.club/apimaster.php";
     var response = await http.post(Uri.parse(Url),
         headers: {
           "Content-Type": "application/json",
           "Operation": "withdraw",
-          "Authorization": "hthwijlewivcbeusnwjx6yqldbdi"
+          "Authorization": "$apikey"
         },
 
 

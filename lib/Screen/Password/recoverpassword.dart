@@ -1,9 +1,14 @@
+// ignore_for_file: avoid_init_to_null
+
+import 'dart:async';
 import 'dart:convert';
+import 'package:email_validator/email_validator.dart';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
 import 'package:flutter_screenutil/flutter_screenutil.dart';
 import 'package:vixx_app/Config/Color.dart';
 import 'package:vixx_app/Config/Style.dart';
+import 'package:vixx_app/Screen/login.dart';
 import 'package:vixx_app/Screen/verify_email.dart';
 import 'package:vixx_app/Widget/ButtonWidget.dart';
 
@@ -13,7 +18,9 @@ class PasswordRecover extends StatefulWidget{
 }
 
 class PasswordRecoverState extends State <PasswordRecover>{
-  String email;
+
+  Timer? timer;
+  String? email;
   TextEditingController emailController = TextEditingController();
   GlobalKey<FormState> globalFormKey = GlobalKey<FormState>();
   final scaffoldKey = GlobalKey<ScaffoldState>();
@@ -39,8 +46,25 @@ class PasswordRecoverState extends State <PasswordRecover>{
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('Recover Password', style: setStyleContent(context,Colors.black,35,FontWeight.bold),),
-                    Text('Don\'t worry happens to the\nbest of us',  style: setStyleContent(context,Colors.black,20,FontWeight.normal),),
+                    Row(
+                      mainAxisAlignment:  MainAxisAlignment.spaceBetween,
+                      children: [
+                        GestureDetector(
+                          child: Icon(Icons.arrow_back_sharp, size: 25,),
+                          onTap: (){
+                            Navigator.push(context,MaterialPageRoute(builder: (context) => LoginPage()));
+                          },
+                        ),
+                        // GestureDetector(
+                        //   child:  Icon(Icons.person_outline_sharp),
+                        //   onTap: (){
+                        //     Navigator.push(context,MaterialPageRoute(builder: (context) => AccountInformation()));
+                        //   },
+                        // ),
+                      ],
+                    ),
+                    Text('Recover Password', style: setStyleContent(context,Colors.black,25,FontWeight.bold),),
+                    Text('Don\'t worry happens to the\nbest of us',  style: setStyleContent(context,Colors.black,13,FontWeight.normal),),
                     SizedBox(height:ScreenUtil().setHeight(56.0)),
                     Form(
                         key: globalFormKey,
@@ -54,12 +78,7 @@ class PasswordRecoverState extends State <PasswordRecover>{
                               onSaved: (val) {
                                 email = val;
                               },
-                              validator: (value) {
-                                if (value == null || value.isEmpty) {
-                                  return 'Please enter valid email';
-                                }
-                                return null;
-                              },
+                              validator: (val) => EmailValidator.validate(val!) ? null : "Please enter a valid email",
                               decoration: InputDecoration(
                                 labelText: 'Email',
                                 labelStyle: setStyleContent(context,Colors.black,12,FontWeight.w300),
@@ -83,11 +102,17 @@ class PasswordRecoverState extends State <PasswordRecover>{
                     onPressed: () async{
                       showDialog(
                           context: context,
-                          builder: (BuildContext context) {
-                            return Center(child: CircularProgressIndicator(),);
+                          builder: (BuildContext context) { timer = Timer(Duration(seconds: 4), () {
+                            Navigator.pop(context);
                           });
+                            return Center(child: CircularProgressIndicator(),);
+                          }).then((val){
+                        if (timer!.isActive) {
+                          timer!.cancel();
+                        }
+                      });
                       await RecoverAction();
-                      if (globalFormKey.currentState .validate()) {
+                      if (globalFormKey.currentState! .validate()) {
                         // If the form is valid, display a snackbar. In the real world,
                         // you'd often call a server or save the information in a database.
                         ScaffoldMessenger.of(context).showSnackBar(
@@ -115,6 +140,7 @@ class PasswordRecoverState extends State <PasswordRecover>{
       'email': email,
     };
     print(data);
+    var jsonResponse = null;
     String body = json.encode(data);
     String Url = "https://thevix.club/apimaster.php";
     var response = await http.post(Uri.parse(Url),
@@ -126,29 +152,31 @@ class PasswordRecoverState extends State <PasswordRecover>{
     );
     print(response.body);
     print(response.statusCode);
-    if(response.statusCode == 200){
-      setState(() {
-      isLoading = false;
-    });
-    // Navigator used to enter inside app if the authentication is correct
-    if (globalFormKey.currentState .validate()) {
-      // If the form is valid, display a snackbar. In the real world,
-      // you'd often call a server or save the information in a database.
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Otp sent successfully'),  duration: const Duration(seconds: 3),),
+    if(response.statusCode == 200)
+      jsonResponse = json.decode(response.body);
+      if(jsonResponse['status'] == 'success'){
+        setState(() {
+          isLoading = false;
+        });
+        // Navigator used to enter inside app if the authentication is correct
+        if (globalFormKey.currentState! .validate()) {
+          // If the form is valid, display a snackbar. In the real world,
+          // you'd often call a server or save the information in a database.
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Otp sent successfully'),  duration: const Duration(seconds: 3),),
 
-      );
-      Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(
-            builder: (BuildContext context) => VerifyEmail(),
-          ),
-              (Route<dynamic> route) => false);
-    }
-    }   else {
-      setState(() {
-        isLoading = false;
-      });
-      print(response.body.toString());
+          );
+          Navigator.of(context).pushAndRemoveUntil(
+              MaterialPageRoute(
+                builder: (BuildContext context) => VerifyEmail(),
+              ),
+                  (Route<dynamic> route) => false);
+        }
+      } else {
+        setState(() {
+          isLoading = false;
+        });
+        print(response.body.toString());
+      }
     }
   }
-}

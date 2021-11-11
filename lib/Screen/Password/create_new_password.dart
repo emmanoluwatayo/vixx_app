@@ -1,3 +1,6 @@
+// ignore_for_file: avoid_init_to_null, non_constant_identifier_names
+
+import 'dart:async';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter/material.dart';
@@ -13,10 +16,12 @@ class CreatePassword extends StatefulWidget{
 
 class CreatePasswordState extends State <CreatePassword>{
 
+  Timer? timer;
+
   bool hidePassword = true;
   bool hidePassword2 =true;
 
-  String email, password;
+  String? email, password;
   final TextEditingController emailController = new TextEditingController();
   final TextEditingController passwordController = new TextEditingController();
   GlobalKey<FormState> globalFormKey = GlobalKey<FormState>();
@@ -41,8 +46,25 @@ class CreatePasswordState extends State <CreatePassword>{
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('Create Password', style: setStyleContent(context,Colors.black,35,FontWeight.bold),),
-                Text('Please set a password for u  account',   style: setStyleContent(context,Colors.black,20,FontWeight.normal)),
+                Row(
+                  mainAxisAlignment:  MainAxisAlignment.spaceBetween,
+                  children: [
+                    GestureDetector(
+                      child: Icon(Icons.arrow_back_sharp, size: 25,),
+                      onTap: (){
+                        Navigator.push(context,MaterialPageRoute(builder: (context) => LoginPage()));
+                      },
+                    ),
+                    // GestureDetector(
+                    //   child:  Icon(Icons.person_outline_sharp),
+                    //   onTap: (){
+                    //     Navigator.push(context,MaterialPageRoute(builder: (context) => AccountInformation()));
+                    //   },
+                    // ),
+                  ],
+                ),
+                Text('Create Password', style: setStyleContent(context,Colors.black,25,FontWeight.bold),),
+                Text('Please set a password for u  account',   style: setStyleContent(context,Colors.black,13,FontWeight.normal)),
                 SizedBox(height:  80.0,),
                 Text('Email',   style: setStyleContent(context,Colors.black,18,FontWeight.bold)),
                 TextFormField(
@@ -50,7 +72,7 @@ class CreatePasswordState extends State <CreatePassword>{
                   keyboardType: TextInputType.emailAddress,
                   controller: emailController,
                   onSaved: (val) {
-                    email = val;
+                    email = val!;
                   },
                   validator: (value) {
                     if (value == null || value.isEmpty) {
@@ -79,7 +101,7 @@ class CreatePasswordState extends State <CreatePassword>{
                   obscureText: hidePassword,
                   controller: passwordController,
                   onSaved: (val) {
-                    password = val;
+                    password = val!;
                   },
                   validator: (value) {
                     if (value == null || value.isEmpty) {
@@ -115,11 +137,17 @@ class CreatePasswordState extends State <CreatePassword>{
                 AppButton(text: "Confirm", onPressed: () async{
                   showDialog(
                       context: context,
-                      builder: (BuildContext context) {
-                        return Center(child: CircularProgressIndicator(),);
+                      builder: (BuildContext context) { timer = Timer(Duration(seconds: 4), () {
+                        Navigator.of(context).pop();
                       });
+                      return Center(child: CircularProgressIndicator(),);
+                      }).then((val){
+                    if (timer!.isActive) {
+                      timer!.cancel();
+                    }
+                  });
                   await CreateAction();
-                  if (globalFormKey.currentState .validate()) {
+                  if (globalFormKey.currentState! .validate()) {
                     // If the form is valid, display a snackbar. In the real world,
                     // you'd often call a server or save the information in a database.
                     ScaffoldMessenger.of(context).showSnackBar(
@@ -149,6 +177,7 @@ class CreatePasswordState extends State <CreatePassword>{
       'password': password
     };
     print(data);
+    var jsonResponse = null;
     String body = json.encode(data);
     String Url = "https://thevix.club/apimaster.php";
     var response = await http.post(Uri.parse(Url),
@@ -160,27 +189,27 @@ class CreatePasswordState extends State <CreatePassword>{
     );
     print(response.body);
     print(response.statusCode);
-    if(response.statusCode == 200){
-
+    if(response.statusCode == 200)
+      jsonResponse = json.decode(response.body);
+    if(jsonResponse['status'] == 'success'){
       setState(() {
         isLoading = false;
       });
       // Navigator used to enter inside app if the authentication is correct
-      if (globalFormKey.currentState .validate()) {
+      if (globalFormKey.currentState! .validate()) {
         // If the form is valid, display a snackbar. In the real world,
         // you'd often call a server or save the information in a database.
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Verification Confirm'),  duration: const Duration(seconds: 3),),
+          const SnackBar(content: Text('Otp sent successfully'),  duration: const Duration(seconds: 3),),
 
         );
-
+      }
       Navigator.of(context).pushAndRemoveUntil(
           MaterialPageRoute(
             builder: (BuildContext context) => LoginPage(),
           ),
               (Route<dynamic> route) => false);
-      }
-    }else {
+    } else {
       setState(() {
         isLoading = false;
       });
@@ -188,3 +217,4 @@ class CreatePasswordState extends State <CreatePassword>{
     }
   }
 }
+

@@ -14,7 +14,7 @@ class KnowYourself extends StatefulWidget{
 }
 
 class KnowYourselfState extends State <KnowYourself>{
-  String selectedDate;
+  String? selectedDate;
   @override
   Widget build(BuildContext context) {
     return Scaffold(

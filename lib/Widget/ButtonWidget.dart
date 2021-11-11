@@ -7,10 +7,11 @@ import 'package:vixx_app/Config/Style.dart';
 class AppButton extends StatelessWidget {
   final VoidCallback onPressed;
   final String text;
+  late bool isButtonDisabled;
 
   AppButton({
-     this.onPressed,
-     this.text,
+     required this.onPressed,
+     required this.text,
   });
 
   @override

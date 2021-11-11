@@ -40,8 +40,8 @@ class OnBoardingPageState extends State <OnBoardingPage> {
                 onDone: () {
                   // print('done tapped');
                 },
-                titleStyles:  setStyleContent(context,Colors.black, 35,FontWeight.bold),
-                descriptionStyles:  setStyleContent(context,Colors.black, 20,FontWeight.normal),
+                titleStyles:  setStyleContent(context,Colors.black, 25,FontWeight.bold),
+                descriptionStyles:  setStyleContent(context,Colors.black, 15,FontWeight.normal),
                 onBoardData: onBoardData,
                 imageHeight: 320,
                 imageWidth: 300,
@@ -63,7 +63,7 @@ class OnBoardingPageState extends State <OnBoardingPage> {
                 ),
                 nextButton: Consumer<OnBoardState>(
                     builder: (BuildContext context, OnBoardState state,
-                        Widget child) {
+                        Widget? child) {
                       return Row(
                         crossAxisAlignment: CrossAxisAlignment.center,
                         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
